@@ -1,9 +1,14 @@
 const express = require('express');
+const cors = require('cors');         // require cors
 const axios = require('axios');
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 10000;
+
+app.use(cors({ origin: '*', methods: ['GET', 'POST', 'OPTIONS'], allowedHeaders: ['Content-Type'] })); // allow all origins
+
 app.use(express.json());
 app.use(express.static('public'));
+
 app.post('/getOTP', async (req, res) => {
     const { name, username } = req.body;
     console.log("Incoming request body:", req.body);
@@ -36,4 +41,6 @@ app.post('/getOTP', async (req, res) => {
     }
 });
 
-app.listen(10000);
+app.listen(port, () => {
+    console.log(`Server listening on port ${port}`);
+});
