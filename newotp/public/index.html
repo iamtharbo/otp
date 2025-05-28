@@ -1,0 +1,31 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>OTP Request</title>
+</head>
+<body>
+  <h2>Request OTP</h2>
+  <form id="otpForm">
+    <input type="text" id="phone" placeholder="Enter phone number" required />
+    <button type="submit">Get OTP</button>
+  </form>
+  <pre id="result"></pre>
+
+  <script>
+    document.getElementById("otpForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const phone = document.getElementById("phone").value;
+
+      const res = await fetch("https://confusion-obsidian-catcher.glitch.me/getOTP", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "", username: phone })
+      });
+
+      const data = await res.json();
+      document.getElementById("result").textContent = JSON.stringify(data, null, 2);
+    });
+  </script>
+</body>
+</html>
