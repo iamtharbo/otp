@@ -17,7 +17,7 @@
       e.preventDefault();
       const phone = document.getElementById("phone").value;
 
-      const res = await fetch("https://confusion-obsidian-catcher.glitch.me/getOTP", {
+      const res = await fetch("/getOTP", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: "", username: phone })
