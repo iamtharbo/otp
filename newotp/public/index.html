@@ -1,30 +1,183 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>OTP Request</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Null</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 {
+      color: #333;
+      text-align: center;
+    }
+    .form-section {
+      background: #f9f9f9;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    button:disabled {
+      background: #cccccc;
+      cursor: not-allowed;
+    }
+    #result {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .success {
+      background: #dff0d8;
+      color: #3c763d;
+    }
+    .error {
+      background: #f2dede;
+      color: #a94442;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
 </head>
-<body>
-  <h2>Request OTP</h2>
-  <form id="otpForm">
-    <input type="text" id="phone" placeholder="Enter phone number" required />
-    <button type="submit">Get OTP</button>
-  </form>
-  <pre id="result"></pre>
-
+<body> 
+  <div class="form-section">
+    <h2>Request OTP</h2>
+    <form id="otpRequestForm">
+      <label>
+        Phone Number:
+        <input type="text" id="phoneNumber" placeholder="e.g. 09123456789" required>
+      </label>
+      <button type="submit">Send OTP</button>
+    </form>
+    <div id="requestResult" class="result"></div>
+  </div> 
+  <div id="verifySection" class="form-section hidden">
+    <h2>Verify OTP</h2>
+    <form id="otpVerifyForm">
+      <input type="hidden" id="otpId">
+      <input type="hidden" id="otpSource">
+      <label>
+        OTP Code (6 digits):
+        <input type="text" id="otpCode" pattern="\d{6}" maxlength="6" required>
+      </label>
+      <label id="phoneNumberLabel">
+        Phone Number (confirm):
+        <input type="text" id="verifyPhoneNumber" required>
+      </label>
+      <button type="submit">Verify OTP</button>
+    </form>
+    <div id="verifyResult" class="result"></div>
+  </div> 
   <script>
-    document.getElementById("otpForm").addEventListener("submit", async function (e) {
-      e.preventDefault();
-      const phone = document.getElementById("phone").value;
+    document.addEventListener('DOMContentLoaded', () => {
+      const otpRequestForm = document.getElementById('otpRequestForm');
+      const otpVerifyForm = document.getElementById('otpVerifyForm');
+      const verifySection = document.getElementById('verifySection');
+      const requestResult = document.getElementById('requestResult');
+      const verifyResult = document.getElementById('verifyResult');
+      const otpIdInput = document.getElementById('otpId');
+      const otpSourceInput = document.getElementById('otpSource');
+      const verifyPhoneNumber = document.getElementById('verifyPhoneNumber'); 
+      otpRequestForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const phoneNumber = document.getElementById('phoneNumber').value.trim();
+        requestResult.textContent = 'Sending OTP...';
+        requestResult.className = 'result';
 
-      const res = await fetch("/getOTP", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "", username: phone })
+        try {
+          const response = await fetch('/getOTP', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: phoneNumber })
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.message || 'Failed to send OTP');
+          } 
+          requestResult.textContent = `Success: ${data.message}`;
+          requestResult.className = 'result success'; 
+          otpIdInput.value = data.id;
+          otpSourceInput.value = data.source;
+          verifyPhoneNumber.value = phoneNumber; 
+          verifySection.classList.remove('hidden');
+          
+        } catch (error) {
+          requestResult.textContent = `Error: ${error.message}`;
+          requestResult.className = 'result error';
+          console.error('OTP Request Error:', error);
+        }
       });
+      otpVerifyForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const otpCode = document.getElementById('otpCode').value.trim();
+        const otpId = otpIdInput.value;
+        const source = otpSourceInput.value;
+        const phoneNumber = verifyPhoneNumber.value.trim();
+        
+        verifyResult.textContent = 'Verifying OTP...';
+        verifyResult.className = 'result';
 
-      const data = await res.json();
-      document.getElementById("result").textContent = JSON.stringify(data, null, 2);
+        try {
+          const response = await fetch('/verifyOTP', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: otpId,
+              otpCode: otpCode,
+              phoneNumber: phoneNumber,
+              source: source
+            })
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.message || 'OTP verification failed');
+          }
+
+          verifyResult.textContent = `Success: ${data.message}`;
+          verifyResult.className = 'result success';
+          console.log('Verification Response:', data);
+
+        } catch (error) {
+          verifyResult.textContent = `Error: ${error.message}`;
+          verifyResult.className = 'result error';
+          console.error('OTP Verification Error:', error);
+        }
+      });
     });
   </script>
 </body>
